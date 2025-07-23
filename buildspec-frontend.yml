@@ -2,10 +2,10 @@ version: 0.2
 
 env:
   secrets-manager:
-    SONAR_TOKEN: "front-backend:SONAR_TOKEN"
+    SONAR_TOKEN: "SONAR_TOKEN"
   variables:
-    S3_BUCKET: "new-front-mahesh"  # <-- Replace with your actual bucket name
-    RUN_SONAR: "true"                 # Optional: allows toggle for sonar scanning
+    RUN_SONAR: "true"
+    S3_BUCKET: "new-front-mahesh"
 
 phases:
   install:
@@ -16,11 +16,11 @@ phases:
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006.zip
       - unzip sonar-scanner.zip
       - export PATH=$PATH:$(pwd)/sonar-scanner-5.0.1.3006/bin
-
   build:
     commands:
-      - echo Running build...
-      - if [ "$RUN_SONAR" = "true" ]; then
+      - echo Running SonarCloud scan...
+      - |
+        if [ "$RUN_SONAR" = "true" ]; then
           sonar-scanner \
             -Dsonar.projectKey=bmahe1_mahesh \
             -Dsonar.organization=bmahe1 \
@@ -30,14 +30,10 @@ phases:
         else
           echo "Sonar scan skipped.";
         fi
-      - echo Packaging app...
-      - mkdir -p output && cp -r src/* output/
-
   post_build:
     commands:
       - echo Deploying to S3...
-      - aws s3 sync output/ s3://$S3_BUCKET/
-      - echo Build and deployment completed successfully.
+      - aws s3 sync . s3://$S3_BUCKET/ --exclude "sonar-scanner*" --exclude "buildspec.yml"
 
 artifacts:
   files:
