@@ -1,13 +1,25 @@
-
 version: 0.2
+
+env:
+  secrets-manager:
+    SONAR_TOKEN: "SONAR_TOKEN"  # Must be stored in AWS Secrets Manager
 
 phases:
   install:
     runtime-versions:
-      nodejs: 18
+      java: corretto17
+    commands:
+      - echo Installing SonarScanner...
+      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006.zip
+      - unzip sonar-scanner.zip
+      - export PATH=$PATH:$(pwd)/sonar-scanner-5.0.1.3006/bin
   build:
     commands:
-      - echo Build complete
+      - echo Running SonarCloud scan...
+      - sonar-scanner -Dsonar.login=$SONAR_TOKEN
+  post_build:
+    commands:
+      - echo Build and scan completed successfully.
 artifacts:
   files:
     - '**/*'
