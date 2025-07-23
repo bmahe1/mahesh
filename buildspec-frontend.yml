@@ -2,39 +2,44 @@ version: 0.2
 
 env:
   secrets-manager:
-    SONAR_TOKEN: "SONAR_TOKEN"
+    SONAR_TOKEN: "front-backend:SONAR_TOKEN"
   variables:
     RUN_SONAR: "true"
-    S3_BUCKET: "new-front-mahesh"
 
 phases:
   install:
     runtime-versions:
+      nodejs: 18
       java: corretto17
     commands:
+      - echo Installing dependencies...
+      - npm install
       - echo Installing SonarScanner...
       - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006.zip
       - unzip sonar-scanner.zip
       - export PATH=$PATH:$(pwd)/sonar-scanner-5.0.1.3006/bin
+
   build:
     commands:
-      - echo Running SonarCloud scan...
+      - echo Building frontend app...
+      - npm run build
       - |
         if [ "$RUN_SONAR" = "true" ]; then
           sonar-scanner \
-            -Dsonar.projectKey=bmahe1_mahesh \
+            -Dsonar.projectKey=bmahe1_frontend \
             -Dsonar.organization=bmahe1 \
             -Dsonar.sources=. \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=$SONAR_TOKEN;
+            -Dsonar.login=$SONAR_TOKEN
         else
-          echo "Sonar scan skipped.";
+          echo "Sonar scan skipped."
         fi
+
   post_build:
     commands:
-      - echo Deploying to S3...
-      - aws s3 sync . s3://$S3_BUCKET/ --exclude "sonar-scanner*" --exclude "buildspec.yml"
+      - echo Build and scan completed.
 
 artifacts:
   files:
     - '**/*'
+  base-directory: build  # This is for React/Vite/Vue/etc.
